@@ -56,6 +56,7 @@
 , woff2
 , bubblewrap
 , libseccomp
+, libbacktrace
 , systemd
 , xdg-dbus-proxy
 , substituteAll
@@ -70,7 +71,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "webkitgtk";
-  version = "2.42.5";
+  version = "2.44.0";
   name = "${finalAttrs.pname}-${finalAttrs.version}+abi=${if lib.versionAtLeast gtk3.version "4.0" then "6.0" else "4.${if lib.versions.major libsoup.version == "2" then "0" else "1"}"}";
 
   outputs = [ "out" "dev" "devdoc" ];
@@ -81,7 +82,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://webkitgtk.org/releases/webkitgtk-${finalAttrs.version}.tar.xz";
-    hash = "sha256-tkJ4wfILjP2/tf9XPDfYcaunSh2ybZs5906JU/5h50k=";
+    hash = "sha256-xmUw5Bulmx7bpO6J7yCyGI4nO+0El+lQhHKePPvjDIc=";
   };
 
   patches = lib.optionals stdenv.isLinux [
@@ -89,13 +90,6 @@ stdenv.mkDerivation (finalAttrs: {
       src = ./fix-bubblewrap-paths.patch;
       inherit (builtins) storeDir;
       inherit (addOpenGLRunpath) driverLink;
-    })
-
-    # Hardcode path to WPE backend
-    # https://github.com/NixOS/nixpkgs/issues/110468
-    (substituteAll {
-      src = ./fdo-backend-path.patch;
-      wpebackend_fdo = libwpe-fdo;
     })
   ];
 
@@ -150,6 +144,7 @@ stdenv.mkDerivation (finalAttrs: {
     libxkbcommon
     libxml2
     libxslt
+    libbacktrace
     nettle
     openjpeg
     p11-kit
@@ -214,8 +209,8 @@ stdenv.mkDerivation (finalAttrs: {
     "-DENABLE_X11_TARGET=OFF"
     "-DUSE_APPLE_ICU=OFF"
     "-DUSE_OPENGL_OR_ES=OFF"
-  ] ++ lib.optionals (lib.versionAtLeast gtk3.version "4.0") [
-    "-DUSE_GTK4=ON"
+  ] ++ lib.optionals (!lib.versionAtLeast gtk3.version "4.0") [
+    "-DUSE_GTK4=OFF"
   ] ++ lib.optionals (!systemdSupport) [
     "-DENABLE_JOURNALD_LOG=OFF"
   ];
